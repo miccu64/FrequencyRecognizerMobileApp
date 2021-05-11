@@ -31,7 +31,7 @@ public class CaptureAudioObservable extends Observable {
     }
 
     public CaptureAudioObservable() {
-        sampleRate = 16000;//8000,16000,22050,44100 - only even numbers
+        sampleRate = 8000;//8000,16000,22050,44100 - only even numbers
         sampleSizeInBytes = 2;//1,2
         int channels = 1;//only 1 will work
         boolean signed = true;//works for me only with true
