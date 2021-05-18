@@ -1,42 +1,30 @@
 package com.example.playfrequency;
 
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.textfield.TextInputEditText;
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketAdapter;
-import com.neovisionaries.ws.client.WebSocketFactory;
-import com.neovisionaries.ws.client.WebSocketFrame;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.FragmentTransaction;
-
-import android.os.Handler;
+import android.util.Log;
 import android.view.View;
-
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.playfrequency.models.FreqMagnModel;
+
 import java.util.Observable;
 import java.util.Observer;
+
+import ua.naiksoftware.stomp.Stomp;
+import ua.naiksoftware.stomp.StompClient;
+
 
 public class MainActivity extends AppCompatActivity implements Observer {
 
     private TextView frequencyView;
     private TextView magnitudeView;
     private CaptureAudioObservable audio;
-    private WebSocketFactory factory;
-    private WebSocket socket;
-    private TextView isConnected;
+    private StompClient stompClient;
+    private String serverName = "";
 
     private void updateElements(float freq, int magn) {
         //needed to update elements on UI from other thread
@@ -47,46 +35,44 @@ public class MainActivity extends AppCompatActivity implements Observer {
     }
 
     private void showToast(String text) {
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(this, text, duration);
-        toast.show();
-
+        this.runOnUiThread(() -> Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show());
     }
 
     public void connect(View view) {
         EditText serverIP = findViewById(R.id.editIP);
-        String serverName = serverIP.getText().toString();
-        factory.setServerName(serverName);
+        serverName = serverIP.getText().toString();
+
         try {
-            socket = factory.createSocket(serverName);
-            // Register a listener to receive WebSocket events.
-            socket.addListener(new WebSocketAdapter() {
-                @Override
-                public void onTextMessage(WebSocket websocket, String message) {
-                    showToast(message);
-                }
+            stompClient = Stomp.over(Stomp.ConnectionProvider.JWS, "ws://" + serverName + ":8080/register/websocket");
+            stompClient.connect();
 
-                @Override
-                public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                    super.onConnected(websocket, headers);
-                    isConnected.setText("Status: połączony");
-                }
+            //wait for connection
+            Thread t1 = new Thread();
+            synchronized (t1) {
+                t1.start();
+                t1.wait(500);
+            }
 
-                @Override
-                public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                    super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
-                    isConnected.setText("Status: rozłączony");
-                }
-            });
+            if (stompClient.isConnected()) {
+                showToast("Połączono z serwerem");
+                stompClient.topic("/freqPlay/connected").subscribe(topicMessage -> {
+                    int a = 0;
+                    int b = 0;
+                    Log.d("TAG", topicMessage.getPayload());
+                });
+            } else {
+                showToast("Nie udało się połączyć");
+            }
         } catch (Exception e) {
-            showToast("Nie można połączyć.");
+
         }
+
+
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        factory = new WebSocketFactory();
 
         setContentView(R.layout.activity_main);
         audio = new CaptureAudioObservable();
@@ -102,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements Observer {
             }
         };
         audioThread.start();
+
+        stompClient = Stomp.over(Stomp.ConnectionProvider.JWS, "ws://");
     }
 
     //update on frequency change
@@ -112,5 +100,10 @@ public class MainActivity extends AppCompatActivity implements Observer {
         float frequency = audio.getFrequency();
         int magnitude = audio.getMagnitude();
         updateElements(frequency, magnitude);
+
+        if (stompClient.isConnected()) {
+            FreqMagnModel f = new FreqMagnModel(frequency, magnitude);
+            stompClient.send("ws://" + serverName + "/connected/sendData", f.toString());
+        }
     }
 }

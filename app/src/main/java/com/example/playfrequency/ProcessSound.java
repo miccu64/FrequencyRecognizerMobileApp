@@ -1,6 +1,7 @@
 package com.example.playfrequency;
 
 import android.util.Pair;
+
 import org.jtransforms.fft.FloatFFT_1D;
 
 import static java.lang.Math.log;
@@ -10,18 +11,10 @@ public class ProcessSound {
     private final int len;
     //buf containing also older values
     private final float[] copiedBufFloat;
-    private float frequency;
-    private int maxMagnitude;
     private final int sampleRate;
     private final int sampleSizeInBytes;
-
-    public float getFrequency() {
-        return frequency;
-    }
-
-    public int getMaxMagnitude() {
-        return maxMagnitude;
-    }
+    private float frequency;
+    private int maxMagnitude;
 
     public ProcessSound(int _sampleRate, int _sampleSizeInBytes) {
         sampleRate = _sampleRate;
@@ -34,13 +27,21 @@ public class ProcessSound {
         copiedBufFloat = new float[len];
     }
 
+    public float getFrequency() {
+        return frequency;
+    }
+
+    public int getMaxMagnitude() {
+        return maxMagnitude;
+    }
+
     public void doProcessing(byte[] bufByte) {
         //convert to floats and resample it
         float[] bufFloat = bytesToFloat(bufByte);
         //shift data in buffer and place some new data
         int end = copiedBufFloat.length - bufFloat.length;
-        System.arraycopy(copiedBufFloat, bufFloat.length, copiedBufFloat,0, end);
-        System.arraycopy(bufFloat, 0, copiedBufFloat, end-1, bufFloat.length);
+        System.arraycopy(copiedBufFloat, bufFloat.length, copiedBufFloat, 0, end);
+        System.arraycopy(bufFloat, 0, copiedBufFloat, end - 1, bufFloat.length);
 
         //buffer for FFT
         float[] currentBuf = new float[copiedBufFloat.length];
@@ -59,8 +60,8 @@ public class ProcessSound {
         //from 1, bcs 0Hz is not useful in DSP
         //bin 0 is the 0 Hz term and is equivalent to the average of all the samples in the window
         //MY MIC FREQ SPAN - 100 Hz–10 kHz
-        for (int i=1; i<magnitudes.length; i++) {
-            if (magnitudes[i] > max){
+        for (int i = 1; i < magnitudes.length; i++) {
+            if (magnitudes[i] > max) {
                 max = magnitudes[i];
                 index = i;
             }
@@ -73,13 +74,13 @@ public class ProcessSound {
         //return index * format.getSampleRate() / len;
 
         //Gaussian interpolation for getting in-between frequency
-        double inter_bin = index + log(magnitudes[index+1]/magnitudes[index-1])*0.5/log(magnitudes[index]*magnitudes[index]/(magnitudes[index+1]*magnitudes[index-1]));
+        double inter_bin = index + log(magnitudes[index + 1] / magnitudes[index - 1]) * 0.5 / log(magnitudes[index] * magnitudes[index] / (magnitudes[index + 1] * magnitudes[index - 1]));
         double res = sampleRate * inter_bin / currentBuf.length;
         frequency = (float) Math.round(res * 10) / 10;
         maxMagnitude = (int) max;
     }
 
-    private Pair<float[], float[]> getRealAndImag (float[] bufFloat) {
+    private Pair<float[], float[]> getRealAndImag(float[] bufFloat) {
         //derive it to real and complex result
         float[] real = new float[len / 2];
         float[] imag = new float[len / 2];
@@ -88,11 +89,11 @@ public class ProcessSound {
         //Re[k] = a[2*k], 0<=k<n/2
         //Im[k] = a[2*k+1], 0<k<n/2
         //Re[n/2] = a[1]
-        for (int pos = 0; pos < len/2; pos++) {
+        for (int pos = 0; pos < len / 2; pos++) {
             real[pos] = bufFloat[2 * pos];
             imag[pos] = bufFloat[2 * pos + 1];
         }
-        real[len/2 - 1] = bufFloat[1];
+        real[len / 2 - 1] = bufFloat[1];
 
         return new Pair<>(real, imag);
     }
@@ -101,7 +102,7 @@ public class ProcessSound {
         float[] real = realImag.first;
         float[] imag = realImag.second;
         double[] magn = new double[real.length];
-        for (int i = 0; i < magn.length-1; i++) {
+        for (int i = 0; i < magn.length - 1; i++) {
             magn[i] = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
         }
         return magn;
@@ -120,7 +121,7 @@ public class ProcessSound {
             }
             //derived by maxValue + 1.0f to get normalization (binarization)
             float maxValue = 0;
-            for (int a=0; a<frameSize; a++)
+            for (int a = 0; a < frameSize; a++)
                 maxValue += 0xff << (8 * a);
             res[pos] = sample / maxValue;
         }

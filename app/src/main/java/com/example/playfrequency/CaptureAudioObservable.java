@@ -3,16 +3,30 @@ package com.example.playfrequency;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+
 import java.util.Observable;
 
 
 public class CaptureAudioObservable extends Observable {
-    private float frequency;
-    private int magnitude;
     private final int len;
     private final int sampleRate;
     private final int sampleSizeInBytes;
     private final AudioRecord audioRecord;
+    private float frequency;
+    private int magnitude;
+
+    public CaptureAudioObservable() {
+        sampleRate = 8000;//8000,16000,22050,44100 - only even numbers
+        sampleSizeInBytes = 2;//1,2
+        int channels = 1;//only 1 will work
+        boolean signed = true;//works for me only with true
+        boolean bigEndian = false;//false - the script is written for little endian
+        //buffer for sound samples - DERIVED BY 5 to get more frequent changes
+        len = sampleRate * sampleSizeInBytes / 5;
+
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                sampleRate, channels, AudioFormat.ENCODING_PCM_16BIT, len);
+    }
 
     public float getFrequency() {
         return frequency;
@@ -28,19 +42,6 @@ public class CaptureAudioObservable extends Observable {
         magnitude = _magn;
         setChanged();
         notifyObservers();
-    }
-
-    public CaptureAudioObservable() {
-        sampleRate = 8000;//8000,16000,22050,44100 - only even numbers
-        sampleSizeInBytes = 2;//1,2
-        int channels = 1;//only 1 will work
-        boolean signed = true;//works for me only with true
-        boolean bigEndian = false;//false - the script is written for little endian
-        //buffer for sound samples - DERIVED BY 5 to get more frequent changes
-        len = sampleRate * sampleSizeInBytes / 5;
-
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                sampleRate, channels, AudioFormat.ENCODING_PCM_16BIT, len);
     }
 
     public void captureAudio() {
