@@ -1,6 +1,8 @@
 package com.example.playfrequency;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -9,6 +11,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -90,6 +94,13 @@ public class MainActivity extends AppCompatActivity implements Observer {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //grant mic permission if not exists
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+        }
+
         setContentView(R.layout.activity_main);
         audio = new CaptureAudioObservable();
         audio.addObserver(this);
@@ -107,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements Observer {
     }
 
     //update on frequency change
+    @SuppressLint("CheckResult")
     @Override
     public void update(Observable o, Object arg) {
         //instance for audio capture
@@ -117,8 +129,15 @@ public class MainActivity extends AppCompatActivity implements Observer {
 
         if (stompClient.isConnected()) {
             //send as JSON string
-            String jsonString = "{\"frequency\":" + frequency + ",\"magnitude\":" + magnitude + "}";
-            stompClient.send("/connected/sendData", jsonString).subscribe();
+            String jsonString = "{\"frequency\":" + frequency + ",\"magnitude\":" + magnitude + ",\"isPhone\":true}";
+            try {
+                stompClient.send("/connected/sendData", jsonString).subscribe(() -> { }, throwable -> {
+                    updateConnectionStatus("Status: rozłączony");
+                });
+            } catch (Exception ignored) {
+                showToast("Utracono połączenie. Próba połączenia...");
+                stompClient.reconnect();
+            }
         }
     }
 
