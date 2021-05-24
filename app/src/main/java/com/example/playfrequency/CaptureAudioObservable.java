@@ -19,8 +19,6 @@ public class CaptureAudioObservable extends Observable {
         sampleRate = 8000;//8000,16000,22050,44100 - only even numbers
         sampleSizeInBytes = 2;//1,2
         int channels = 1;//only 1 will work
-        boolean signed = true;//works for me only with true
-        boolean bigEndian = false;//false - the script is written for little endian
         //buffer for sound samples - DERIVED BY 5 to get more frequent changes
         len = sampleRate * sampleSizeInBytes / 5;
 
@@ -51,7 +49,7 @@ public class CaptureAudioObservable extends Observable {
         ProcessSound process = new ProcessSound(sampleRate, sampleSizeInBytes);
 
         while (true) {
-            //read data form input
+            //read data from input
             int length = audioRecord.read(bufByte, 0, len);
             if (length > 0) {
                 process.doProcessing(bufByte);

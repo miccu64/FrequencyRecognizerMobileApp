@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -63,8 +62,8 @@ public class MainActivity extends AppCompatActivity implements Observer {
                         //process JSON
                         String json = topicMessage.getPayload();
                         int fromWhere = json.indexOf("strongEnough");
-                        String magnString = json.substring(fromWhere + 14, json.length()-1);
-                        String freqString = json.substring(13,fromWhere-2);
+                        String magnString = json.substring(fromWhere + 14, json.length() - 1);
+                        String freqString = json.substring(13, fromWhere - 2);
 
                         //show on UI
                         runOnUiThread(() -> {
@@ -131,8 +130,8 @@ public class MainActivity extends AppCompatActivity implements Observer {
             //send as JSON string
             String jsonString = "{\"frequency\":" + frequency + ",\"magnitude\":" + magnitude + ",\"isPhone\":true}";
             try {
-                stompClient.send("/connected/sendData", jsonString).subscribe(() -> { }, throwable -> {
-                    updateConnectionStatus("Status: rozłączony");
+                stompClient.send("/connected/sendData", jsonString).subscribe(() -> {
+                }, throwable -> {
                 });
             } catch (Exception ignored) {
                 showToast("Utracono połączenie. Próba połączenia...");
