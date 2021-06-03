@@ -16,14 +16,15 @@ public class CaptureAudioObservable extends Observable {
     private int magnitude;
 
     public CaptureAudioObservable() {
+        //better to set smaller sampleRate for compatibility and less computations
         sampleRate = 8000;//8000,16000,22050,44100 - only even numbers
-        sampleSizeInBytes = 2;//1,2
+        sampleSizeInBytes = 1;//1,2
         int channels = 1;//only 1 will work
         //buffer for sound samples - DERIVED BY 5 to get more frequent changes
         len = sampleRate * sampleSizeInBytes / 5;
 
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                sampleRate, channels, AudioFormat.ENCODING_PCM_16BIT, len);
+                sampleRate, channels, AudioFormat.ENCODING_PCM_8BIT, len);
     }
 
     public float getFrequency() {
@@ -46,7 +47,7 @@ public class CaptureAudioObservable extends Observable {
         audioRecord.startRecording();
 
         byte[] bufByte = new byte[len];
-        ProcessSound process = new ProcessSound(sampleRate, sampleSizeInBytes);
+        ProcessSound process = new ProcessSound(sampleRate, sampleSizeInBytes, len);
 
         while (true) {
             //read data from input
