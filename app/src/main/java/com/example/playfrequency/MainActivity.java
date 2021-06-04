@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements Observer {
                     updateConnectionStatus("Status: rozłączony");
                     break;
                 case CLOSED:
+                case FAILED_SERVER_HEARTBEAT:
                     showToast("Rozłączono");
                     updateConnectionStatus("Status: rozłączony");
                     break;
@@ -139,6 +140,4 @@ public class MainActivity extends AppCompatActivity implements Observer {
             }
         }
     }
-
-
 }

@@ -35,8 +35,8 @@ public class ProcessSound {
     public void doProcessing(byte[] bufByte) {
         //convert to floats and resample it
         float[] bufFloat = bytesToFloat(bufByte);
-        doNormalization(bufFloat);
         doWindowing(bufFloat);
+        doNormalization(bufFloat);
 
         //realForward, bcs we have got real data
         fft.realForward(bufFloat);
